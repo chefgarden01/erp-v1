@@ -1919,7 +1919,7 @@ function saveRecord() {
 
     if (!editingId && def.fields[0].auto) {
         if (currentCode === 'master_product') {
-            record[idField] = generateMasterProductId(record.product_name_kr || '');
+            record[idField] = generateMasterProductId();
         } else {
             record[idField] = generateId(currentCode);
         }

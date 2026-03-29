@@ -103,6 +103,8 @@ function initCommonCodes() {
         localStorage.setItem('gtp_common_groups', JSON.stringify(groups));
         localStorage.setItem('gtp_common_details', JSON.stringify(details));
         localStorage.setItem('gtp_common_initialized', 'true');
+        saveToFirestore('common_groups', groups);
+        saveToFirestore('common_details', details);
     }
 
     // 신규 그룹코드 자동 추가 (이미 초기화된 후에도 새 그룹 코드 반영)
@@ -138,6 +140,8 @@ function initCommonCodes() {
     if (changed) {
         localStorage.setItem('gtp_common_groups', JSON.stringify(groups));
         localStorage.setItem('gtp_common_details', JSON.stringify(details));
+        saveToFirestore('common_groups', groups);
+        saveToFirestore('common_details', details);
     }
 }
 
@@ -147,12 +151,14 @@ function getCommonGroups() {
 }
 function setCommonGroups(data) {
     localStorage.setItem('gtp_common_groups', JSON.stringify(data));
+    saveToFirestore('common_groups', data);
 }
 function getCommonDetails() {
     return JSON.parse(localStorage.getItem('gtp_common_details') || '[]');
 }
 function setCommonDetails(data) {
     localStorage.setItem('gtp_common_details', JSON.stringify(data));
+    saveToFirestore('common_details', data);
 }
 
 // ===== 특정 그룹의 상세코드 값 목록 가져오기 =====

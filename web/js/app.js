@@ -110,13 +110,14 @@ const PAGE_SIZE = 20;
 // ===== 작업탭 관리 =====
 let openWorktabs = []; // [{code, label, module}]
 
-// ===== 데이터 저장/로드 (localStorage) =====
+// ===== 데이터 저장/로드 (localStorage + Firestore) =====
 function getData(codeKey) {
     const raw = localStorage.getItem('gtp_' + codeKey);
     return raw ? JSON.parse(raw) : [];
 }
 function setData(codeKey, data) {
     localStorage.setItem('gtp_' + codeKey, JSON.stringify(data));
+    saveToFirestore(codeKey, data);
 }
 
 // ===== 코드 자동생성 =====
@@ -1467,6 +1468,7 @@ function saveChangeHistory(productId, oldRecord, newRecord) {
     });
 
     localStorage.setItem('gtp_change_history_' + productId, JSON.stringify(history));
+    saveToFirestore('change_history_' + productId, history);
 }
 
 // ===== 자동번역 (한국어 → 캄보디아어/크메르어) =====
@@ -1496,6 +1498,7 @@ function getTranslationCache() {
 }
 function setTranslationCache(cache) {
     localStorage.setItem('gtp_translation_cache', JSON.stringify(cache));
+    saveToFirestore('translation_cache', cache);
 }
 
 // 1단계: 로컬 사전 조회
@@ -2361,7 +2364,7 @@ function exportToExcel() {
 }
 
 // ===== 초기화 =====
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const dropZone = document.getElementById('excelDropZone');
     if (dropZone) {
         dropZone.addEventListener('click', () => document.getElementById('excelFileInput').click());
@@ -2374,6 +2377,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (file) processExcelFile(file);
         });
     }
+
+    // Firestore → localStorage 동기화 (앱 시작 시)
+    await syncFromFirestore();
+
     // 공통코드 초기화
     initCommonCodes();
 

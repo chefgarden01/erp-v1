@@ -110,7 +110,7 @@ let currentCode = 'common_code';
 let currentPage = 1;
 let editingId = null;
 let excelData = [];
-const PAGE_SIZE = 20;
+let PAGE_SIZE = 20;
 
 // ===== 작업탭 관리 =====
 let openWorktabs = []; // [{code, label, module}]
@@ -1164,6 +1164,7 @@ function renderPage() {
             </div>
             <div class="page-actions">
                 ${def.hasAutoTranslate ? '<button class="btn" onclick="batchTranslateKH()" id="btnBatchTranslate">🌐 캄보디아어 일괄번역</button>' : ''}
+                <button class="btn btn-danger" onclick="deleteAllRecords()">🗑 전체 삭제</button>
                 <button class="btn" onclick="downloadTemplate()">📥 엑셀 템플릿</button>
                 <button class="btn btn-success" onclick="openExcelModal()">📤 엑셀 대량등록</button>
                 <button class="btn btn-primary" onclick="openNewForm()">+ 신규 등록</button>
@@ -1187,6 +1188,12 @@ function renderPage() {
                 <option value="사용" selected>사용</option>
                 <option value="정지">정지</option>
                 <option value="삭제">삭제</option>
+            </select>
+            <select class="filter-select" id="pageSizeSelect" onchange="changePageSize(this.value)" style="width:auto;min-width:80px;">
+                <option value="20"${PAGE_SIZE===20?' selected':''}>20건</option>
+                <option value="25"${PAGE_SIZE===25?' selected':''}>25건</option>
+                <option value="100"${PAGE_SIZE===100?' selected':''}>100건</option>
+                <option value="500"${PAGE_SIZE===500?' selected':''}>500건</option>
             </select>
             <span class="record-count" id="recordCount"></span>
         </div>
@@ -2560,6 +2567,24 @@ function deleteRecord(id) {
     }
 }
 
+// ===== 전체 삭제 =====
+function deleteAllRecords() {
+    const def = CODE_DEFINITIONS[currentCode];
+    const data = getData(currentCode);
+    if (data.length === 0) { alert('삭제할 데이터가 없습니다.'); return; }
+    if (!confirm(`[${def.name}] 전체 ${data.length}건을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) return;
+    if (!confirm(`정말 삭제하시겠습니까? 모든 ${def.name} 데이터가 영구 삭제됩니다.`)) return;
+    setData(currentCode, []);
+    renderPage();
+}
+
+// ===== 품목수 변경 =====
+function changePageSize(val) {
+    PAGE_SIZE = parseInt(val) || 20;
+    currentPage = 1;
+    renderTable();
+}
+
 // ===== 모달 크기 적용 =====
 function applyModalSize(def) {
     const modal = document.getElementById('formModal');
@@ -2977,12 +3002,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // SKU상품 데이터 초기화 (1회성)
-    if (!localStorage.getItem('gtp_sku_product_reset_v1')) {
+    if (!localStorage.getItem('gtp_sku_product_reset_v3')) {
         localStorage.removeItem('gtp_sku_product');
         Object.keys(localStorage).forEach(key => {
             if (key.startsWith('gtp_change_history_SKU-')) localStorage.removeItem(key);
         });
-        localStorage.setItem('gtp_sku_product_reset_v1', 'done');
+        localStorage.setItem('gtp_sku_product_reset_v3', 'done');
     }
 
     // 모듈 초기화

@@ -2452,13 +2452,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 마스터상품 데이터 초기화 (1회성 - 데이터 전체 삭제 및 초기화)
     try {
-        if (!localStorage.getItem('gtp_master_product_reset_v4')) {
+        if (!localStorage.getItem('gtp_master_product_reset_v5')) {
             localStorage.removeItem('gtp_master_product');
             Object.keys(localStorage).forEach(key => {
                 if (key.startsWith('gtp_change_history_GTP-')) localStorage.removeItem(key);
             });
             saveToFirestore('master_product', []);
-            localStorage.setItem('gtp_master_product_reset_v4', 'done');
+            localStorage.setItem('gtp_master_product_reset_v5', 'done');
         }
 
         // SKU상품 데이터 초기화 (1회성 - 데이터 전체 삭제 및 초기화)

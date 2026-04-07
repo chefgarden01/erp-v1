@@ -1953,6 +1953,7 @@ function saveRecord() {
             data[idx] = record;
         }
     } else {
+        if (!record.status) record.status = '사용';
         record.created_by = 'Admin';
         record.created_at = now;
         record.updated_by = 'Admin';
@@ -2433,42 +2434,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     initCommonCodes();
 
     // 마스터상품 데이터 초기화 (1회성 - 데이터 전체 삭제 및 초기화)
-    if (!localStorage.getItem('gtp_master_product_reset_v4')) {
-        localStorage.removeItem('gtp_master_product');
-        Object.keys(localStorage).forEach(key => {
-            if (key.startsWith('gtp_change_history_GTP-')) localStorage.removeItem(key);
-        });
-        deleteFromFirestore('master_product');
-        // Firestore 변경이력도 삭제
-        db.collection(FIRESTORE_COLLECTION).get().then(snapshot => {
-            snapshot.forEach(doc => {
-                if (doc.id.startsWith('change_history_GTP-')) deleteFromFirestore(doc.id);
+    try {
+        if (!localStorage.getItem('gtp_master_product_reset_v4')) {
+            localStorage.removeItem('gtp_master_product');
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('gtp_change_history_GTP-')) localStorage.removeItem(key);
             });
-        });
-        localStorage.setItem('gtp_master_product_reset_v4', 'done');
-    }
+            saveToFirestore('master_product', []);
+            localStorage.setItem('gtp_master_product_reset_v4', 'done');
+        }
 
-    // SKU상품 데이터 초기화 (1회성 - 데이터 전체 삭제 및 초기화)
-    if (!localStorage.getItem('gtp_sku_product_reset_v2')) {
-        localStorage.removeItem('gtp_sku_product');
-        Object.keys(localStorage).forEach(key => {
-            if (key.startsWith('gtp_change_history_SKU-')) localStorage.removeItem(key);
-        });
-        deleteFromFirestore('sku_product');
-        // Firestore 변경이력도 삭제
-        db.collection(FIRESTORE_COLLECTION).get().then(snapshot => {
-            snapshot.forEach(doc => {
-                if (doc.id.startsWith('change_history_SKU-')) deleteFromFirestore(doc.id);
+        // SKU상품 데이터 초기화 (1회성 - 데이터 전체 삭제 및 초기화)
+        if (!localStorage.getItem('gtp_sku_product_reset_v2')) {
+            localStorage.removeItem('gtp_sku_product');
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('gtp_change_history_SKU-')) localStorage.removeItem(key);
             });
-        });
-        localStorage.setItem('gtp_sku_product_reset_v2', 'done');
-    }
+            saveToFirestore('sku_product', []);
+            localStorage.setItem('gtp_sku_product_reset_v2', 'done');
+        }
 
-    // 마스터-SKU 매핑 데이터 초기화 (1회성 - 상품 데이터 초기화에 따른 매핑 정리)
-    if (!localStorage.getItem('gtp_product_mapping_reset_v1')) {
-        localStorage.removeItem('gtp_product_mapping');
-        deleteFromFirestore('product_mapping');
-        localStorage.setItem('gtp_product_mapping_reset_v1', 'done');
+        // 마스터-SKU 매핑 데이터 초기화 (1회성 - 상품 데이터 초기화에 따른 매핑 정리)
+        if (!localStorage.getItem('gtp_product_mapping_reset_v1')) {
+            localStorage.removeItem('gtp_product_mapping');
+            saveToFirestore('product_mapping', []);
+            localStorage.setItem('gtp_product_mapping_reset_v1', 'done');
+        }
+    } catch(e) {
+        console.warn('[초기화] 데이터 리셋 오류:', e.message);
     }
 
     // 모듈 초기화

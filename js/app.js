@@ -2741,10 +2741,16 @@ function downloadTemplate() {
     const data = getData(currentCode);
     const isSku = def.hasSkuMasterItems;
 
+    // 마스터상품 단위코드 필드 키 목록 (엑셀 템플릿에 포함)
+    const unitFieldKeys = ['use_unit_kg','weight_unit_kg','use_unit_box','weight_unit_box',
+        'use_unit_pack','weight_unit_pack','use_unit_tonbag','weight_unit_tonbag',
+        'use_unit_pallet','weight_unit_pallet'];
+
     // 기본 필드 (auto 포함 - 기존 데이터 표시용)
     const templateFields = def.fields.filter(f =>
         f.key !== 'remarks' &&
-        f.type !== 'hidden' && f.type !== 'unit_system' &&
+        (f.type !== 'hidden' || unitFieldKeys.includes(f.key)) &&
+        f.type !== 'unit_system' &&
         f.type !== 'mapping_actions' && f.type !== 'change_history' && f.type !== 'notice' &&
         f.type !== 'sku_master_items' && f.type !== 'sku_gift_items'
     );

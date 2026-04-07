@@ -36,6 +36,16 @@ function saveToFirestore(key, data) {
 }
 
 /**
+ * Firestore에서 문서 삭제
+ * @param {string} key - 문서 ID
+ */
+function deleteFromFirestore(key) {
+    db.collection(FIRESTORE_COLLECTION).doc(key).delete().catch(function(e) {
+        console.error('[Firebase] 삭제 실패:', key, e.message);
+    });
+}
+
+/**
  * 앱 시작 시 Firestore → localStorage 전체 동기화
  * Firestore에 저장된 모든 데이터를 localStorage로 가져옴
  */

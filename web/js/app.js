@@ -2384,22 +2384,43 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 공통코드 초기화
     initCommonCodes();
 
-    // 마스터상품 데이터 초기화 (1회성 - GTP-0001 순번 코드체계 전환)
-    if (!localStorage.getItem('gtp_master_product_reset_v3')) {
+    // 마스터상품 데이터 초기화 (1회성 - 데이터 전체 삭제 및 초기화)
+    if (!localStorage.getItem('gtp_master_product_reset_v4')) {
         localStorage.removeItem('gtp_master_product');
         Object.keys(localStorage).forEach(key => {
             if (key.startsWith('gtp_change_history_GTP-')) localStorage.removeItem(key);
         });
-        localStorage.setItem('gtp_master_product_reset_v3', 'done');
+        deleteFromFirestore('master_product');
+        // Firestore 변경이력도 삭제
+        db.collection(FIRESTORE_COLLECTION).get().then(snapshot => {
+            snapshot.forEach(doc => {
+                if (doc.id.startsWith('change_history_GTP-')) deleteFromFirestore(doc.id);
+            });
+        });
+        localStorage.setItem('gtp_master_product_reset_v4', 'done');
     }
 
-    // SKU상품 데이터 초기화 (1회성)
-    if (!localStorage.getItem('gtp_sku_product_reset_v1')) {
+    // SKU상품 데이터 초기화 (1회성 - 데이터 전체 삭제 및 초기화)
+    if (!localStorage.getItem('gtp_sku_product_reset_v2')) {
         localStorage.removeItem('gtp_sku_product');
         Object.keys(localStorage).forEach(key => {
             if (key.startsWith('gtp_change_history_SKU-')) localStorage.removeItem(key);
         });
-        localStorage.setItem('gtp_sku_product_reset_v1', 'done');
+        deleteFromFirestore('sku_product');
+        // Firestore 변경이력도 삭제
+        db.collection(FIRESTORE_COLLECTION).get().then(snapshot => {
+            snapshot.forEach(doc => {
+                if (doc.id.startsWith('change_history_SKU-')) deleteFromFirestore(doc.id);
+            });
+        });
+        localStorage.setItem('gtp_sku_product_reset_v2', 'done');
+    }
+
+    // 마스터-SKU 매핑 데이터 초기화 (1회성 - 상품 데이터 초기화에 따른 매핑 정리)
+    if (!localStorage.getItem('gtp_product_mapping_reset_v1')) {
+        localStorage.removeItem('gtp_product_mapping');
+        deleteFromFirestore('product_mapping');
+        localStorage.setItem('gtp_product_mapping_reset_v1', 'done');
     }
 
     // 모듈 초기화

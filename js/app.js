@@ -121,9 +121,9 @@ function setData(codeKey, data) {
 }
 
 // ===== 코드 자동생성 =====
-function generateId(codeKey) {
+function generateId(codeKey, existingData) {
     const def = CODE_DEFINITIONS[codeKey];
-    const data = getData(codeKey);
+    const data = existingData || getData(codeKey);
     const prefix = def.prefix;
     let maxNum = 0;
     data.forEach(item => {
@@ -2343,17 +2343,15 @@ function importExcelData() {
             }
         }
 
+        // 자동 ID 부여
         if (currentCode === 'sku_product' && row.sku_id) {
             // SKU코드 그대로 사용
         } else if (def.fields[0].auto) {
             if (currentCode === 'master_product') {
                 row[idField] = generateMasterProductId(data);
             } else {
-                row[idField] = generateId(currentCode);
+                row[idField] = generateId(currentCode, data);
             }
-            data.push(Object.assign(row, { created_by: 'Admin', created_at: now, updated_by: 'Admin', updated_at: now }));
-            imported++;
-            return;
         }
 
         if (!row.status) row.status = '사용';

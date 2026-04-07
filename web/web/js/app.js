@@ -2885,6 +2885,7 @@ function importExcelData() {
     }
 
     let imported = 0;
+    let updated = 0;
     excelData.forEach(row => {
         // SKU 마스터상품/증정상품 연결 데이터를 JSON으로 변환
         if (isSku) {
@@ -2901,32 +2902,50 @@ function importExcelData() {
             }
         }
 
-        if (currentCode === 'sku_product' && row.sku_id) {
-            // SKU코드 그대로 사용
-        } else if (def.fields[0].auto) {
-            if (currentCode === 'master_product') {
-                row[idField] = generateMasterProductId(data);
-            } else {
-                row[idField] = generateId(currentCode);
-            }
-            data.push(Object.assign(row, { created_by: 'Admin', created_at: now, updated_by: 'Admin', updated_at: now }));
-            imported++;
-            return;
-        }
+        // 기존 코드가 있으면 수정(업데이트), 없으면 신규 등록
+        const rowId = row[idField];
+        const existingIdx = rowId ? data.findIndex(d => d[idField] === rowId) : -1;
 
-        if (!row.status) row.status = '사용';
-        row.created_by = 'Admin';
-        row.created_at = now;
-        row.updated_by = 'Admin';
-        row.updated_at = now;
-        data.push(row);
-        imported++;
+        if (existingIdx >= 0) {
+            // 기존 레코드 업데이트: 엑셀에서 값이 있는 필드만 덮어쓰기
+            const existing = data[existingIdx];
+            Object.keys(row).forEach(key => {
+                if (row[key] !== '' && row[key] != null) {
+                    existing[key] = row[key];
+                }
+            });
+            existing.updated_by = 'Admin';
+            existing.updated_at = now;
+            updated++;
+        } else {
+            // 자동 ID 부여
+            if (currentCode === 'sku_product' && row.sku_id) {
+                // SKU코드 그대로 사용
+            } else if (def.fields[0].auto) {
+                if (currentCode === 'master_product') {
+                    row[idField] = generateMasterProductId(data);
+                } else {
+                    row[idField] = generateId(currentCode, data);
+                }
+            }
+
+            if (!row.status) row.status = '사용';
+            row.created_by = 'Admin';
+            row.created_at = now;
+            row.updated_by = 'Admin';
+            row.updated_at = now;
+            data.push(row);
+            imported++;
+        }
     });
 
     setData(currentCode, data);
     closeExcelModal();
     renderTable();
-    alert(`${imported}건이 등록되었습니다.`);
+    const msg = [];
+    if (imported > 0) msg.push(`신규 ${imported}건`);
+    if (updated > 0) msg.push(`수정 ${updated}건`);
+    alert(`${msg.join(', ')} 처리되었습니다.`);
 }
 
 // ===== QR 코드 =====

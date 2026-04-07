@@ -1184,13 +1184,11 @@ function renderPage() {
             </select>` : ''}
             <select class="filter-select" id="statusFilter" onchange="renderTable()">
                 <option value="">전체 상태</option>
-                <option value="사용">사용</option>
+                <option value="사용" selected>사용</option>
                 <option value="정지">정지</option>
                 <option value="삭제">삭제</option>
             </select>
-            <button class="btn btn-sm" onclick="showAllRecords()">📋 전체 조회</button>
             <span class="record-count" id="recordCount"></span>
-            <button class="btn btn-danger btn-sm" id="btnBulkDelete" style="display:none;margin-left:auto;" onclick="bulkDeleteRecords()">🗑 선택 삭제 (<span id="bulkDeleteCount">0</span>건)</button>
         </div>
         <div class="table-wrapper">
             <table class="data-table" id="dataTable"></table>
@@ -1287,9 +1285,7 @@ function renderTable() {
     def.fields.forEach(f => fieldMap[f.key] = f);
 
     const table = document.getElementById('dataTable');
-    const idField = def.fields[0].key;
     let html = '<thead><tr>';
-    html += '<th style="width:40px"><input type="checkbox" id="checkAll" onchange="toggleCheckAll(this)"></th>';
     columns.forEach(col => {
         const f = fieldMap[col];
         html += `<th>${f ? f.label : col}</th>`;
@@ -1297,12 +1293,10 @@ function renderTable() {
     html += '<th style="width:120px">작업</th></tr></thead><tbody>';
 
     if (pageData.length === 0) {
-        html += `<tr><td colspan="${columns.length + 2}" style="text-align:center;padding:40px;color:var(--gray-400)">등록된 데이터가 없습니다</td></tr>`;
+        html += `<tr><td colspan="${columns.length + 1}" style="text-align:center;padding:40px;color:var(--gray-400)">등록된 데이터가 없습니다</td></tr>`;
     } else {
         pageData.forEach(item => {
-            const rowId = item[idField] || '';
             html += '<tr>';
-            html += `<td><input type="checkbox" class="row-check" value="${rowId}" onchange="updateBulkDeleteBtn()"></td>`;
             columns.forEach(col => {
                 let val = item[col] || '';
                 if (col === 'status') {
@@ -1330,6 +1324,7 @@ function renderTable() {
                 }
                 html += `<td title="${item[col] || ''}">${val}</td>`;
             });
+            const idField = def.fields[0].key;
             const id = item[idField];
             html += `<td class="td-actions">
                 <button class="btn btn-sm" onclick="showQr('${id}')">QR</button>
@@ -2537,7 +2532,6 @@ function saveRecord() {
             data[idx] = record;
         }
     } else {
-        if (!record.status) record.status = '사용';
         record.created_by = 'Admin';
         record.created_at = now;
         record.updated_by = 'Admin';
@@ -2564,68 +2558,6 @@ function deleteRecord(id) {
         setData(currentCode, data);
         renderTable();
     }
-}
-
-// ===== 전체 조회 (필터 초기화) =====
-function showAllRecords() {
-    const statusFilter = document.getElementById('statusFilter');
-    const searchInput = document.getElementById('searchInput');
-    if (statusFilter) statusFilter.value = '';
-    if (searchInput) searchInput.value = '';
-    const channelFilter = document.getElementById('channelFilter');
-    const sellerFilter = document.getElementById('sellerFilter');
-    const houseStatusFilter = document.getElementById('houseStatusFilter');
-    if (channelFilter) channelFilter.value = '';
-    if (sellerFilter) sellerFilter.value = '';
-    if (houseStatusFilter) houseStatusFilter.value = '';
-    currentPage = 1;
-    renderTable();
-}
-
-// ===== 체크박스 전체선택/해제 =====
-function toggleCheckAll(el) {
-    document.querySelectorAll('.row-check').forEach(cb => { cb.checked = el.checked; });
-    updateBulkDeleteBtn();
-}
-
-// ===== 선택 삭제 버튼 상태 업데이트 =====
-function updateBulkDeleteBtn() {
-    const checked = document.querySelectorAll('.row-check:checked');
-    const btn = document.getElementById('btnBulkDelete');
-    const count = document.getElementById('bulkDeleteCount');
-    if (btn) {
-        btn.style.display = checked.length > 0 ? 'inline-flex' : 'none';
-        count.textContent = checked.length;
-    }
-    // 전체선택 체크박스 동기화
-    const all = document.querySelectorAll('.row-check');
-    const checkAll = document.getElementById('checkAll');
-    if (checkAll) checkAll.checked = all.length > 0 && checked.length === all.length;
-}
-
-// ===== 선택 항목 일괄 삭제 =====
-function bulkDeleteRecords() {
-    const checked = document.querySelectorAll('.row-check:checked');
-    const ids = Array.from(checked).map(cb => cb.value);
-    if (ids.length === 0) return;
-    if (!confirm(`선택한 ${ids.length}건의 항목을 삭제하시겠습니까?`)) return;
-
-    const def = CODE_DEFINITIONS[currentCode];
-    const data = getData(currentCode);
-    const idField = def.fields[0].key;
-    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    const idSet = new Set(ids);
-
-    data.forEach(item => {
-        if (idSet.has(item[idField])) {
-            item.status = '삭제';
-            item.updated_by = 'Admin';
-            item.updated_at = now;
-        }
-    });
-
-    setData(currentCode, data);
-    renderTable();
 }
 
 // ===== 모달 크기 적용 =====
@@ -2944,15 +2876,17 @@ function importExcelData() {
             }
         }
 
-        // 자동 ID 부여
         if (currentCode === 'sku_product' && row.sku_id) {
             // SKU코드 그대로 사용
         } else if (def.fields[0].auto) {
             if (currentCode === 'master_product') {
                 row[idField] = generateMasterProductId(data);
             } else {
-                row[idField] = generateId(currentCode, data);
+                row[idField] = generateId(currentCode);
             }
+            data.push(Object.assign(row, { created_by: 'Admin', created_at: now, updated_by: 'Admin', updated_at: now }));
+            imported++;
+            return;
         }
 
         if (!row.status) row.status = '사용';
@@ -3033,35 +2967,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 공통코드 초기화
     initCommonCodes();
 
-    // 마스터상품 데이터 초기화 (1회성 - 데이터 전체 삭제 및 초기화)
-    try {
-        if (!localStorage.getItem('gtp_master_product_reset_v5')) {
-            localStorage.removeItem('gtp_master_product');
-            Object.keys(localStorage).forEach(key => {
-                if (key.startsWith('gtp_change_history_GTP-')) localStorage.removeItem(key);
-            });
-            saveToFirestore('master_product', []);
-            localStorage.setItem('gtp_master_product_reset_v5', 'done');
-        }
+    // 마스터상품 데이터 초기화 (1회성 - GTP-0001 순번 코드체계 전환)
+    if (!localStorage.getItem('gtp_master_product_reset_v3')) {
+        localStorage.removeItem('gtp_master_product');
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('gtp_change_history_GTP-')) localStorage.removeItem(key);
+        });
+        localStorage.setItem('gtp_master_product_reset_v3', 'done');
+    }
 
-        // SKU상품 데이터 초기화 (1회성 - 데이터 전체 삭제 및 초기화)
-        if (!localStorage.getItem('gtp_sku_product_reset_v2')) {
-            localStorage.removeItem('gtp_sku_product');
-            Object.keys(localStorage).forEach(key => {
-                if (key.startsWith('gtp_change_history_SKU-')) localStorage.removeItem(key);
-            });
-            saveToFirestore('sku_product', []);
-            localStorage.setItem('gtp_sku_product_reset_v2', 'done');
-        }
-
-        // 마스터-SKU 매핑 데이터 초기화 (1회성 - 상품 데이터 초기화에 따른 매핑 정리)
-        if (!localStorage.getItem('gtp_product_mapping_reset_v1')) {
-            localStorage.removeItem('gtp_product_mapping');
-            saveToFirestore('product_mapping', []);
-            localStorage.setItem('gtp_product_mapping_reset_v1', 'done');
-        }
-    } catch(e) {
-        console.warn('[초기화] 데이터 리셋 오류:', e.message);
+    // SKU상품 데이터 초기화 (1회성)
+    if (!localStorage.getItem('gtp_sku_product_reset_v1')) {
+        localStorage.removeItem('gtp_sku_product');
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('gtp_change_history_SKU-')) localStorage.removeItem(key);
+        });
+        localStorage.setItem('gtp_sku_product_reset_v1', 'done');
     }
 
     // 모듈 초기화

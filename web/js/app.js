@@ -601,10 +601,11 @@ function renderPage() {
             </select>` : ''}
             <select class="filter-select" id="statusFilter" onchange="renderTable()">
                 <option value="">전체 상태</option>
-                <option value="사용" selected>사용</option>
+                <option value="사용">사용</option>
                 <option value="정지">정지</option>
                 <option value="삭제">삭제</option>
             </select>
+            <button class="btn btn-sm" onclick="showAllRecords()">📋 전체 조회</button>
             <span class="record-count" id="recordCount"></span>
             <button class="btn btn-danger btn-sm" id="btnBulkDelete" style="display:none;margin-left:auto;" onclick="bulkDeleteRecords()">🗑 선택 삭제 (<span id="bulkDeleteCount">0</span>건)</button>
         </div>
@@ -1980,6 +1981,22 @@ function deleteRecord(id) {
         setData(currentCode, data);
         renderTable();
     }
+}
+
+// ===== 전체 조회 (필터 초기화) =====
+function showAllRecords() {
+    const statusFilter = document.getElementById('statusFilter');
+    const searchInput = document.getElementById('searchInput');
+    if (statusFilter) statusFilter.value = '';
+    if (searchInput) searchInput.value = '';
+    const channelFilter = document.getElementById('channelFilter');
+    const sellerFilter = document.getElementById('sellerFilter');
+    const houseStatusFilter = document.getElementById('houseStatusFilter');
+    if (channelFilter) channelFilter.value = '';
+    if (sellerFilter) sellerFilter.value = '';
+    if (houseStatusFilter) houseStatusFilter.value = '';
+    currentPage = 1;
+    renderTable();
 }
 
 // ===== 체크박스 전체선택/해제 =====

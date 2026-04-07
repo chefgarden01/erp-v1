@@ -43,10 +43,10 @@ const CODE_DEFINITIONS = {
             { key: 'supplier_id', label: '매입거래처', type: 'ref_select', refCode: 'supplier', refNameField: 'supplier_name', refIdField: 'supplier_id', required: false, width: 120 },
 
             // ── 단위코드 (실제 데이터 저장용, 폼에서는 unit_system으로 렌더링) ──
-            { key: 'use_unit_kg',      label: 'kg단위 사용', type: 'hidden', required: false },
+            { key: 'use_unit_kg',      label: '단위코드', type: 'hidden', required: false },
             { key: 'weight_unit_kg',   label: 'kg단위 중량(kg)', type: 'hidden', required: false },
             { key: 'use_unit_box',     label: '박스단위 사용', type: 'hidden', required: false },
-            { key: 'weight_unit_box',  label: '박스단위 중량(kg)', type: 'hidden', required: false },
+            { key: 'weight_unit_box',  label: '박스단위 중량', type: 'hidden', required: false },
             { key: 'use_unit_pack',    label: '팩단위 사용', type: 'hidden', required: false },
             { key: 'weight_unit_pack', label: '팩단위 중량(kg)', type: 'hidden', required: false },
             { key: 'use_unit_tonbag',  label: '톤백단위 사용', type: 'hidden', required: false },
@@ -80,7 +80,7 @@ const CODE_DEFINITIONS = {
             { key: 'remarks', label: '비고', type: 'textarea', required: false, width: 150 },
             { key: 'change_history_btn', label: '변경이력', type: 'change_history', required: false },
         ],
-        listColumns: ['master_product_id','product_name_kr','category_large','origin','purchase_channel','storage_type','status'],
+        listColumns: ['master_product_id','product_name_kr','use_unit_kg','weight_unit_box','purchase_channel','supplier_id','storage_zone','inbound_manager','inventory_manager','packaging_manager','min_stock_days','avg_stock_days','max_stock_days'],
     },
 
     // ===== 2. SKU상품 코드 =====

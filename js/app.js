@@ -606,6 +606,7 @@ function renderPage() {
                 <option value="삭제">삭제</option>
             </select>
             <span class="record-count" id="recordCount"></span>
+            <button class="btn btn-danger btn-sm" id="btnBulkDelete" style="display:none;margin-left:auto;" onclick="bulkDeleteRecords()">🗑 선택 삭제 (<span id="bulkDeleteCount">0</span>건)</button>
         </div>
         <div class="table-wrapper">
             <table class="data-table" id="dataTable"></table>
@@ -702,7 +703,9 @@ function renderTable() {
     def.fields.forEach(f => fieldMap[f.key] = f);
 
     const table = document.getElementById('dataTable');
+    const idField = def.fields[0].key;
     let html = '<thead><tr>';
+    html += '<th style="width:40px"><input type="checkbox" id="checkAll" onchange="toggleCheckAll(this)"></th>';
     columns.forEach(col => {
         const f = fieldMap[col];
         html += `<th>${f ? f.label : col}</th>`;
@@ -710,10 +713,12 @@ function renderTable() {
     html += '<th style="width:120px">작업</th></tr></thead><tbody>';
 
     if (pageData.length === 0) {
-        html += `<tr><td colspan="${columns.length + 1}" style="text-align:center;padding:40px;color:var(--gray-400)">등록된 데이터가 없습니다</td></tr>`;
+        html += `<tr><td colspan="${columns.length + 2}" style="text-align:center;padding:40px;color:var(--gray-400)">등록된 데이터가 없습니다</td></tr>`;
     } else {
         pageData.forEach(item => {
+            const rowId = item[idField] || '';
             html += '<tr>';
+            html += `<td><input type="checkbox" class="row-check" value="${rowId}" onchange="updateBulkDeleteBtn()"></td>`;
             columns.forEach(col => {
                 let val = item[col] || '';
                 if (col === 'status') {
@@ -741,7 +746,6 @@ function renderTable() {
                 }
                 html += `<td title="${item[col] || ''}">${val}</td>`;
             });
-            const idField = def.fields[0].key;
             const id = item[idField];
             html += `<td class="td-actions">
                 <button class="btn btn-sm" onclick="showQr('${id}')">QR</button>
@@ -1975,6 +1979,52 @@ function deleteRecord(id) {
         setData(currentCode, data);
         renderTable();
     }
+}
+
+// ===== 체크박스 전체선택/해제 =====
+function toggleCheckAll(el) {
+    document.querySelectorAll('.row-check').forEach(cb => { cb.checked = el.checked; });
+    updateBulkDeleteBtn();
+}
+
+// ===== 선택 삭제 버튼 상태 업데이트 =====
+function updateBulkDeleteBtn() {
+    const checked = document.querySelectorAll('.row-check:checked');
+    const btn = document.getElementById('btnBulkDelete');
+    const count = document.getElementById('bulkDeleteCount');
+    if (btn) {
+        btn.style.display = checked.length > 0 ? 'inline-flex' : 'none';
+        count.textContent = checked.length;
+    }
+    // 전체선택 체크박스 동기화
+    const all = document.querySelectorAll('.row-check');
+    const checkAll = document.getElementById('checkAll');
+    if (checkAll) checkAll.checked = all.length > 0 && checked.length === all.length;
+}
+
+// ===== 선택 항목 일괄 삭제 =====
+function bulkDeleteRecords() {
+    const checked = document.querySelectorAll('.row-check:checked');
+    const ids = Array.from(checked).map(cb => cb.value);
+    if (ids.length === 0) return;
+    if (!confirm(`선택한 ${ids.length}건의 항목을 삭제하시겠습니까?`)) return;
+
+    const def = CODE_DEFINITIONS[currentCode];
+    const data = getData(currentCode);
+    const idField = def.fields[0].key;
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const idSet = new Set(ids);
+
+    data.forEach(item => {
+        if (idSet.has(item[idField])) {
+            item.status = '삭제';
+            item.updated_by = 'Admin';
+            item.updated_at = now;
+        }
+    });
+
+    setData(currentCode, data);
+    renderTable();
 }
 
 // ===== 모달 크기 적용 =====
